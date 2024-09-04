@@ -16,7 +16,13 @@ app.get("/youtubers/:id", function (req, res) {
 })
 
 app.get("/youtubers", function (req, res) {
-    res.json({message : "Testing"});
+
+    let sendObject = {};
+    db.forEach(function (youtuber, key) {
+        sendObject[key] = youtuber;
+    })
+
+    res.json(sendObject);
 })
 
 app.use(express.json());
@@ -30,6 +36,67 @@ app.post("/youtubers", (req, res) => {
     res.json({
         message : `${body.channelTitle} 님, 유튜버 생활을 응원합니다!`
     });
+})
+
+app.delete("/youtubers/:id", (req, res) => {
+    let {id} = req.params;
+
+    id = parseInt(id)
+
+    console.log(id);
+
+    if(db.has(id)){
+        res.json({
+            message : `${id} 에 해당하는 유튜버 ${db.get(id).channelTitle} 님이 삭제되었습니다.`
+        })
+
+        db.delete(id);
+    } else {
+        res.json({
+            message : "해당 유튜버는 존재하지 않아 삭제할 수 없습니다. "
+        })
+    }
+})
+
+app.delete("/youtubers", (req, res) => {
+    if(db.size === 0){
+        res.json({
+            message : "이미 유튜버가 없는 상태입니다."
+        })
+    } else {
+        db.clear();
+        res.json({
+            message : "모든 유튜버들이 삭제되었습니다."
+        })
+    }
+})
+
+app.put("/youtubers/:id", (req, res) => {
+    let {id} = req.params;
+    id = parseInt(id);
+    const {channelTitle} = req.body;
+
+    if(!db.has(id)) {
+        res.json({
+            message: "해당 유튜버가 없어 수정 할 수 없습니다."
+        })
+    }
+
+    let msg = "";
+    const title = db.get(id)["channelTitle"];
+
+    if (title === channelTitle) {
+        msg = "이미 동일한 채널명을 사용하고 있습니다."
+    } else {
+        let object = db.get(id);
+        object["channelTitle"] = channelTitle;
+        db.set(id, object);
+        msg = `${title} 채널명이 ${channelTitle} 로 채널명이 변경되었습니다.`
+    }
+
+    res.json({
+        message : msg
+    })
 })
 
 let db = new Map();
